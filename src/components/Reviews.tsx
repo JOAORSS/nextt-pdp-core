@@ -1,4 +1,4 @@
-type Review = {
+export interface ReviewType {
   id: number
   autor: string
   rating: number
@@ -6,7 +6,7 @@ type Review = {
 }
 
 type Props = {
-  items: Review[]
+  items: ReviewType[]
 }
 
 export default function Reviews({ items }: Props) {

@@ -1,13 +1,6 @@
-import { renderToString } from 'react-dom/server'
-import { createClient } from '@libsql/client/http'
-import Reviews from '@/components/Reviews'
-
-// removido: export const runtime = 'edge'
-
-const db = createClient({
-  url: process.env.TURSO_DATABASE_URL!,
-  authToken: process.env.TURSO_AUTH_TOKEN!,
-})
+import { renderToReadableStream } from 'react-dom/server.edge'
+import Reviews, { ReviewType } from '@/components/Reviews'
+import { getDb } from '@/lib/db'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': process.env.CLIENT_DOMAIN || '*',
@@ -25,33 +18,14 @@ export async function GET(request: Request) {
     })
   }
 
-  let reviews = []
-  try {
-    const result = await db.execute({
-      sql: 'SELECT * FROM reviews WHERE product_id = ? ORDER BY created_at DESC',
-      args: [productId],
-    })
+  const reviews = [] as ReviewType[]
 
-    reviews = result.rows.map((row) => ({
-      id: row.id as number,
-      autor: row.autor as string,
-      rating: row.rating as number,
-      texto: row.texto as string,
-    }))
-  } catch (error) {
-    console.error(error)
-    return new Response('Erro interno', {
-      status: 500,
-      headers: CORS_HEADERS,
-    })
-  }
+  const stream = await renderToReadableStream(<Reviews items={reviews} />)
 
-  const html = renderToString(<Reviews items={reviews} />)
-
-  return new Response(html, {
+  return new Response(stream, {
     headers: {
       'Content-Type': 'text/html; charset=utf-8',
-      'Cache-Control': 's-maxage=300, stale-while-revalidate=600',
+      'Cache-Control': 's-maxage=60, stale-while-revalidate',
       ...CORS_HEADERS,
     },
   })
