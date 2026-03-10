@@ -1,6 +1,13 @@
-import { renderToReadableStream } from 'react-dom/server.edge'
+import { renderToString } from 'react-dom/server'
+import { createClient } from '@libsql/client/http'
 import Reviews from '@/components/Reviews'
-import { getDb } from '@/lib/db'
+
+// removido: export const runtime = 'edge'
+
+const db = createClient({
+  url: process.env.TURSO_DATABASE_URL!,
+  authToken: process.env.TURSO_AUTH_TOKEN!,
+})
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': process.env.CLIENT_DOMAIN || '*',
@@ -20,7 +27,6 @@ export async function GET(request: Request) {
 
   let reviews = []
   try {
-    const db = getDb()
     const result = await db.execute({
       sql: 'SELECT * FROM reviews WHERE product_id = ? ORDER BY created_at DESC',
       args: [productId],
@@ -40,12 +46,12 @@ export async function GET(request: Request) {
     })
   }
 
-  const stream = await renderToReadableStream(<Reviews items={reviews} />)
+  const html = renderToString(<Reviews items={reviews} />)
 
-  return new Response(stream, {
+  return new Response(html, {
     headers: {
       'Content-Type': 'text/html; charset=utf-8',
-      'Cache-Control': 's-maxage=60, stale-while-revalidate',
+      'Cache-Control': 's-maxage=300, stale-while-revalidate=600',
       ...CORS_HEADERS,
     },
   })
