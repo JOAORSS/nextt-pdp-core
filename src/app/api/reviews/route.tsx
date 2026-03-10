@@ -1,8 +1,8 @@
-import { renderToString } from 'react-dom/server'
+import { renderToReadableStream } from 'react-dom/server.edge'
 import { createClient } from '@libsql/client/http'
 import Reviews from '@/components/Reviews'
 
-// removido: export const runtime = 'edge'
+export const runtime = 'edge'
 
 const db = createClient({
   url: process.env.TURSO_DATABASE_URL!,
@@ -46,9 +46,10 @@ export async function GET(request: Request) {
     })
   }
 
-  const html = renderToString(<Reviews items={reviews} />)
+  const stream = await renderToReadableStream(<Reviews items={reviews} />)
+  await stream.allReady
 
-  return new Response(html, {
+  return new Response(stream, {
     headers: {
       'Content-Type': 'text/html; charset=utf-8',
       'Cache-Control': 's-maxage=300, stale-while-revalidate=600',
