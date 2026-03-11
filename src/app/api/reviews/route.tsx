@@ -1,6 +1,5 @@
 import { renderToReadableStream } from 'react-dom/server.edge'
 import Reviews, { ReviewType } from '@/components/Reviews'
-import { getDb } from '@/lib/db'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': process.env.CLIENT_DOMAIN || '*',
